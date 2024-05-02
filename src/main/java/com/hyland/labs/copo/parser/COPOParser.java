@@ -57,17 +57,30 @@ public class COPOParser {
     File copoFile;
 
     String destinationDirectoryPath;
+    
+    String metadataExportType = null;
+    
+    String schemaPrefix = null;
 
-    public COPOParser(File copoFile, String destinationDirectoryPath) {
+    public COPOParser(File copoFile, String destinationDirectoryPath, String metadataExportType, String schemaPrefix) {
         this.copoFile = copoFile;
         this.destinationDirectoryPath = destinationDirectoryPath;
         if (!this.destinationDirectoryPath.endsWith("/")) {
             this.destinationDirectoryPath += "/";
         }
+        this.metadataExportType = metadataExportType;
+        if(metadataExportType == null || (!"json".equals(metadataExportType) && !"xml".equals(metadataExportType))) {
+            throw new IllegalArgumentException("Metadata Export Type must be either json or xml (case sensitive).");
+        }
+
+        this.schemaPrefix = schemaPrefix;
+        if("xml".equals(metadataExportType) && (schemaPrefix == null || schemaPrefix.isEmpty())) {
+            throw new IllegalArgumentException("When Metadata Export Type is xml, schemaPrefix cannot be empty.");
+        }
     }
 
-    public static void process(File copoFile, String destinationDirectoryPath) throws IOException {
-        COPOParser parser = new COPOParser(copoFile, destinationDirectoryPath);
+    public static void process(File copoFile, String destinationDirectoryPath, String metadataExportType, String schemaPrefix) throws IOException {
+        COPOParser parser = new COPOParser(copoFile, destinationDirectoryPath, metadataExportType, schemaPrefix);
         parser.process();
     }
 
@@ -174,10 +187,17 @@ public class COPOParser {
                 // Generate JSON and PDF
                 // ========================================
                 Invoice invoice = new Invoice(voucher, company, invoiceNumber, invoiceDateStr, invoiceAmountStr,
-                        poNumber);
+                        poNumber, schemaPrefix);
                 invoiceCount += 1;
+                // Generate PDF
                 invoice.buildPdf(textForPdf, destinationDirectoryPath, 2);
-                invoice.toXmlFilePropertyForAlfrescoBulkImport(destinationDirectoryPath, invoiceCount, copoFile.getName());
+                
+                // Generate JSON or XML
+                if(metadataExportType.equals("json")) {
+                    invoice.toJsonFile(destinationDirectoryPath);
+                } else {
+                    invoice.toXmlFilePropertyForAlfrescoBulkImport(destinationDirectoryPath, invoiceCount, copoFile.getName());
+                }
             } // while (it.hasNext())
 
         } catch (IOException e) {
@@ -193,4 +213,5 @@ public class COPOParser {
     protected boolean isRecordEnd(String line) {
         return line.indexOf(END_RECORD_TOKEN) > -1;
     }
+   
 }

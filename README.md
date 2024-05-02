@@ -12,44 +12,42 @@ Pars a text file, generate pdf + metadata that can then be bulk-imported in Alfr
 
 * Have Java 17 installed
 * Get the final jar (co-po-parser.jar) from the Release folder
-* ⚠️ Set the `ALF_PROP_FILE_SCHEMA_PREFIX` environment variable. it must contain the prefix used when exporting invoices as Alfresco Metadata file, for bulk import. For example, if the prefix is "acme", the XML will be:
 
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
-<properties>
-   . . .
-   <entry key="acme:voucher">V1234</entry>
-   <entry key="acme:company">5678</entry>
-   . . .
-</properties>
-```
+* Run it as a command line. It requires the following arguments:
+  * `-f` the path of the file to parse
+  * `-d` the path of the destination directory for the generated files (pdf and metadata). It must be an _existing_ directory that will receive all the files
+  * `-met` the type of export. Required. Must je `json` or `xml`, case sensitive
+  * If `-met` is `xml`, then  `-sp` is required. It is the SchemaPrefix to use for the Alfresco Metadata sidecar file used by the bulk importer.
 
-* Run it as a command line. It requires 2 arguments:
-  * -f /fullPath/to/the/CO_PO-file-to-ingest
-  * -d /fullePath/to_existing/direcrory
-
-The `-d` argument must be an _existing_ directory that will receive all the files
 
 So, for example, say you have...
 
-* The file to ingest at `/home/ubuntu/copotest/CO_PO`,  * and your created a directory at `home/ubuntu/copotest/invoices`,
+* The file to ingest at `/home/ubuntu/copotest/CO_PO`,
+* and your created a directory at `home/ubuntu/copotest/invoices`,
 * and the command is at `/home/ubuntu/copotest/co-po-parser.jar`
 
-... the command is:
+... the command to export as json is:
 
 ```
 cd /home/ubuntu/copotest
-export ALF_PROP_FILE_SCHEMA_PREFIX=acme
-java -jar co-po-parser.jar -f /home/ubuntu/copotest/CO_PO -d home/ubuntu/copotest/invoices
+java -jar co-po-parser.jar -f /home/ubuntu/copotest/CO_PO -d home/ubuntu/copotest/invoices -met json
 ```
 
-Run it. The command outputs the received arguments, then processes the file, create the invoices and ends with outputting "Done".
+To export as XML with the "acme" schema prefix:
+
+```
+cd /home/ubuntu/copotest
+java -jar co-po-parser.jar -f /home/ubuntu/copotest/CO_PO -d home/ubuntu/copotest/invoices -met xml -sp acme
+```
+
+The command outputs the received arguments, then processes the file, creates the invoices and ends with outputting "Done".
 
 In this example, the files are in `home/ubuntu/copotest/invoices`, there are 2 files per invoice, made unique by their invoice number:
 
 * One is the pdf file of the invoice, named `{INVOICE_NUMBER}.pdf`. For example: AB123456.pdf, 7890123.pdf, etc.
-* The other is the metadata file, as expected by [Alfresco Bulk Import](https://docs.alfresco.com/content-services/latest/admin/import-transfer/), an XML, named `{INVOICE_NUMBER}.pdf.metadata.properties.xml`. For example, assuming `ALF_PROP_FILE_SCHEMA_PREFIX` has been set to `acme`, and the invoice number is ABC123456, the file will be:
+* The other is the metadata file. Depending on the `-met` argument, it will be either
+  * A simple json file named `{INVOICE_NUMBER}.json`
+  * Or an XML file as expected by [Alfresco Bulk Import](https://docs.alfresco.com/content-services/latest/admin/import-transfer/), named `{INVOICE_NUMBER}.pdf.metadata.properties.xml`. For example, assuming `sp` has been set to `acme`, and the invoice number is ABC123456, the file will be:
 
 
 ```

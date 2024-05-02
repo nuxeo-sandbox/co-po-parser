@@ -50,9 +50,11 @@ public class Invoice {
     String poNumber;
 
     File pdf;
+    
+    String schemaPrefix;
 
     public Invoice(String voucher, String company, String invoiceNumber, String invoiceDateStr, String invoiceAmountStr,
-            String poNumber) {
+            String poNumber, String schemaPrefix) {
 
         this.voucher = voucher;
         this.company = company;
@@ -60,25 +62,11 @@ public class Invoice {
         this.invoiceDateStr = invoiceDateStr;
         this.invoiceAmount = Double.valueOf(invoiceAmountStr);
         this.poNumber = poNumber;
+        this.schemaPrefix = schemaPrefix;
     }
 
     /**
-     * IMPORTANT #1
-     * When running this, an ALF_PROP_FILE_SCHEMA_PREFIX environment variable is expected, giving the prefix
-     * for the fields. For example, to use "acme" as schema prefix in the output ...
-     * 
-     * <pre>
-     * <?xml version="1.0" encoding="UTF-8"?>
-     * . . .
-     *   <properties>
-     *   . . .
-     *   <entry key="acme:voucher">V1234</entry>
-     *   <entry key="acme:company">C6789</entry>
-     * </pre>
-     * 
-     * ... we need ALF_PROP_FILE_SCHEMA_PREFIX=acme defined before generating the output.
-     * This is done to keep this source in apûblic repo without sharing potential info on customers.
-     * IMPORTANT #2
+     * IMPORTANT
      * We do not use XML Java class because we are short in time, so we generate the XML by just exporting text.
      * 
      * @return a XMl file property of the data
@@ -87,9 +75,8 @@ public class Invoice {
     public File toXmlFilePropertyForAlfrescoBulkImport(String destinationDirectoryPath, long index, String copoFileName)
             throws IOException {
 
-        String schemaPrefix = System.getenv("ALF_PROP_FILE_SCHEMA_PREFIX");
         if (schemaPrefix == null || schemaPrefix.isEmpty()) {
-            throw new IllegalArgumentException("The ALF_PROP_FILE_SCHEMA_PREFIX env. variable is not defined.");
+            throw new IllegalArgumentException("The schemaPrefix is not defined.");
         }
 
         if (!fullpathExists(destinationDirectoryPath)) {
@@ -240,5 +227,36 @@ public class Invoice {
         return f.exists();
 
     }
+    /*
+    protected void createInAlfresco() throws IOException, AuthenticationException {
+
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost("http://someservername:8080/alfresco/api/-default-/public/alfresco/versions/1/nodes/12341234-1234-1234-1234-123412341234/children");
+        UsernamePasswordCredentials creds = new UsernamePasswordCredentials ("admin","adminpswd");
+        httpPost.addHeader (new BasicScheme().authenticate(creds,httpPost, null));
+
+        File payload = new File ("/path/to/my/file.pdf");
+
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create(); // Entity builder
+
+        builder.addPart("filedata", new FileBody(payload)); // this is where I was struggling
+        builder.addTextBody ("name", "thenamegoeshere");
+        builder.addTextBody ("foo", "foo");
+        builder.addTextBody ("bar", "bar");
+        builder.addTextBody ("description", "descriptiongoeshere");
+
+        builder.addTextBody ("overwrite", "true");
+
+        HttpEntity entity = builder.build();
+
+        httpPost.setHeader("Accept","application/json");
+        httpPost.setEntity(entity);
+
+        CloseableHttpResponse response = httpClient.execute(httpPost); // Post the request and get response
+
+        System.out.println(response.toString()); // Response print to console
+
+        httpClient.close();  // close the client
+    }*/
 
 }
