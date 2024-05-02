@@ -82,6 +82,7 @@ public class COPOParser {
             String invoiceAmountStr;
             String poNumber;
             String textForPdf = "";
+            long invoiceCount = 0;
             while (it.hasNext()) {
 
                 // ========================================
@@ -174,8 +175,9 @@ public class COPOParser {
                 // ========================================
                 Invoice invoice = new Invoice(voucher, company, invoiceNumber, invoiceDateStr, invoiceAmountStr,
                         poNumber);
+                invoiceCount += 1;
                 invoice.buildPdf(textForPdf, destinationDirectoryPath, 2);
-                invoice.getJsonAsFile(destinationDirectoryPath);
+                invoice.toXmlFilePropertyForAlfrescoBulkImport(destinationDirectoryPath, invoiceCount, copoFile.getName());
             } // while (it.hasNext())
 
         } catch (IOException e) {

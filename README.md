@@ -6,12 +6,25 @@
 
 ## Description
 
-Well. Parsing a text file :-)
+Pars a text file, generate pdf + metadata that can then be bulk-imported in Alfresco.
 
 ## Usage as a Command Line
 
 * Have Java 17 installed
 * Get the final jar (co-po-parser.jar) from the Release folder
+* ⚠️ Set the `ALF_PROP_FILE_SCHEMA_PREFIX` environment variable. it must contain the prefix used when exporting invoices as Alfresco Metadata file, for bulk import. For example, if the prefix is "acme", the XML will be:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+   . . .
+   <entry key="acme:voucher">V1234</entry>
+   <entry key="acme:company">5678</entry>
+   . . .
+</properties>
+```
+
 * Run it as a command line. It requires 2 arguments:
   * -f /fullPath/to/the/CO_PO-file-to-ingest
   * -d /fullePath/to_existing/direcrory
@@ -27,35 +40,46 @@ So, for example, say you have...
 
 ```
 cd /home/ubuntu/copotest
+export ALF_PROP_FILE_SCHEMA_PREFIX=acme
 java -jar co-po-parser.jar -f /home/ubuntu/copotest/CO_PO -d home/ubuntu/copotest/invoices
 ```
 
 Run it. The command outputs the received arguments, then processes the file, create the invoices and ends with outputting "Done".
 
-The files are in `home/ubuntu/copotest/invoices`, there are 2 files per invoice, made unique by their invoice number:
+In this example, the files are in `home/ubuntu/copotest/invoices`, there are 2 files per invoice, made unique by their invoice number:
 
-* One is the metadata file, a JSON, named `CO_PO_{INVOICE_NUMBER}-Metadata.json`. It contains the following properties, to be saved as field in a document in the repository:
+* One is the pdf file of the invoice, named `{INVOICE_NUMBER}.pdf`. For example: AB123456.pdf, 7890123.pdf, etc.
+* The other is the metadata file, as expected by [Alfresco Bulk Import](https://docs.alfresco.com/content-services/latest/admin/import-transfer/), an XML, named `{INVOICE_NUMBER}.pdf.metadata.properties.xml`. For example, assuming `ALF_PROP_FILE_SCHEMA_PREFIX` has been set to `acme`, and the invoice number is ABC123456, the file will be:
 
 
 ```
-{
-  "voucher": "E57924",
-  "invoiceNumber": "1PV47LV67946",
-  "company": "3800",
-  "invoiceDateStr": "20240314",
-  "invoiceAmount": 188.94,
-  "poNumber": "380790198"
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+  <entry key="type">cm:content</entry>
+  <entry key="aspects">cm:versionable,test:Test</entry>
+  <entry key="cm:title">ABC123456</entry>
+  <entry key="cm:description">File #4 from bulk import of CO_PO-test-small.txt</entry>
+  <entry key="hanes:voucher">V1234</entry>
+  <entry key="hanes:company">0987</entry>
+  <entry key="hanes:invoiceNumber">ABC123456</entry>
+  <entry key="hanes:invoiceDate">20240414</entry>
+  <entry key="hanes:invoiceAmount">128.07</entry>
+  <entry key="hanes:poNumber">1234567890</entry>
+</properties>
 ```
 
-* One is the PDF, `CO_PO_{INVOICE_NUMBER}.pdf`
 
-
-So, the result is:
+So, the result in the destination directory is:
 
 ```
-CO_PO_1LMNFRYL7TXQ-Metadata.jsonCO_PO_1LMNFRYL7TXQ.pdfCO_PO_1PV47LV67946-Metadata.jsonCO_PO_1PV47LV67946.pdfCO_PO_1WMLGLJT7J6F-Metadata.jsonCO_PO_1WMLGLJT7J6F.pdfCO_PO_PR0100373326-Metadata.jsonCO_PO_PR0100373326.pdf
-. . .
+AB123456.pdf
+AB123456.pdf.metadata.properties.xml
+CD789012.pdf
+CD789012.pdf.metadata.properties.xml
+EF345678.pdf
+EF345678.pdf.metadata.properties.xml
+. . . etc . . .
 ```
 
 
